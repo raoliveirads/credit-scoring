@@ -1,0 +1,17 @@
+[
+  "RevolvingUtilizationOfUnsecuredLines",
+  "NumberOfTimes90DaysLate",
+  "NumberOfTime30-59DaysPastDueNotWorse",
+  "NumberOfTime60-89DaysPastDueNotWorse",
+  "age",
+  "MonthlyIncome",
+  "NumberOfOpenCreditLinesAndLoans",
+  "DebtRatio",
+  "NumberOfDependents",
+  "flag_missing_income",
+  "renda_per_capita",
+  "teve_atraso_90dias",
+  "teve_qualquer_atraso",
+  "total_atrasos",
+  "score_risco"
+]

@@ -1,0 +1,31 @@
+{
+  "mediana_monthly_income": 5400.0,
+  "mediana_number_of_dependents": 0.0,
+  "p99_revolving": 1.0929536128055999,
+  "p99_monthly_income": 23000.0,
+  "p99_debt_ratio": 1.40235833477,
+  "score_risco_min": 0.0,
+  "score_risco_max": 0.957474069383037,
+  "revolving_min": 0.0,
+  "revolving_max": 1.0929580132799976,
+  "atrasos_min": 0.0,
+  "atrasos_max": 294.0,
+  "threshold_producao": 0.749,
+  "features_ordem": [
+    "RevolvingUtilizationOfUnsecuredLines",
+    "NumberOfTimes90DaysLate",
+    "NumberOfTime30-59DaysPastDueNotWorse",
+    "NumberOfTime60-89DaysPastDueNotWorse",
+    "age",
+    "MonthlyIncome",
+    "NumberOfOpenCreditLinesAndLoans",
+    "DebtRatio",
+    "NumberOfDependents",
+    "flag_missing_income",
+    "renda_per_capita",
+    "teve_atraso_90dias",
+    "teve_qualquer_atraso",
+    "total_atrasos",
+    "score_risco"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "registros_originais": 150000,
+  "registros_finais": 149999,
+  "registros_removidos": 1,
+  "features_originais": 11,
+  "features_criadas": [
+    "flag_missing_income",
+    "flag_missing_dependents"
+  ],
+  "tratamentos_aplicados": [
+    "Removido 1 registro com age=0 (dado inválido)",
+    "Winsorização RevolvingUtilization no p99",
+    "Winsorização MonthlyIncome no p99",
+    "Winsorização DebtRatio no p99 do grupo plausível (DebtRatio < 2)",
+    "Imputação MonthlyIncome com mediana (19.8% missing)",
+    "Imputação NumberOfDependents com mediana (2.6% missing)",
+    "Criação de flags de missing antes da imputação"
+  ],
+  "achados_criticos": [
+    "DebtRatio corrompido para 93% dos clientes sem renda informada",
+    "Features de atraso com 94%+ de zeros — IV calculado com bins de negócio",
+    "RevolvingUtilization com IV=1.11 investigado e confirmado como legítimo",
+    "Relação monotônica entre idade e inadimplência confirmada",
+    "Um único atraso de 90 dias já eleva drasticamente o risco"
+  ]
+}

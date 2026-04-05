@@ -1,0 +1,24 @@
+# Dados
+data/raw/
+data/processed/
+data/external/
+
+# MLflow — gerado automaticamente
+mlruns/
+notebooks/mlruns/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+
+# Ambiente
+venv/
+.venv/
+*.egg-info/
+.env
+
+# Sistema Mac
+.DS_Store
+**/.DS_Store
