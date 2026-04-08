@@ -11,7 +11,7 @@
 Inadimplência é um dos principais riscos operacionais de instituições financeiras.
 Este projeto desenvolve um modelo de machine learning para prever a probabilidade de um cliente não honrar seus compromissos financeiros nos próximos 24 meses, apoiando decisões de concessão de crédito com base em dados históricos de comportamento.
 
-**Problema:** Classificação binária — cliente vai ou não vai inadimplir?
+**Problema:** Classificação binária. Cliente vai ou não vai inadimplir?
 
 > Simulação de impacto financeiro baseada em parâmetros hipotéticos
 > (ticket médio R$15.000, taxa de recuperação 40%). Valores para fins ilustrativos.
@@ -21,8 +21,7 @@ Este projeto desenvolve um modelo de machine learning para prever a probabilidad
 
 ## Objetivo
 
-Construir um pipeline completo de Data Science — da exploração dos dados ao deploy —
-capaz de:
+Construir um pipeline completo de Data Science (da exploração dos dados ao deploy) capaz de:
 - Identificar clientes de alto risco antes da concessão do crédito
 - Explicar as decisões do modelo para stakeholders e compliance
 - Operar em produção via interface web com pipeline reproduzível
