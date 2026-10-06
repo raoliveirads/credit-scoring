@@ -78,6 +78,11 @@ def fmt(v):
     return str(int(v))
 
 
+def titulo_slider(nome, valor, descricao=None):
+    sub = f'<div class="hint">{descricao}</div>' if descricao else ""
+    html(f'<div class="sl-head"><span>{nome}</span><span class="mono">{valor}</span></div>{sub}')
+
+
 def prob(d):
     return predizer(d)["probabilidade"]
 
@@ -129,7 +134,15 @@ section[data-testid="stSidebar"] hr { margin: 12px 0; border-color: #eeece7; }
 .st-key-card_form [data-testid="stWidgetLabel"] p { font-size: 13px; }
 .st-key-card_form [data-testid="stTickBar"] { display: none; }
 .st-key-card_form .eyebrow { margin: 0 0 10px; }
-.st-key-card_form .hint { margin: -6px 0 10px; line-height: 1.35; }
+.st-key-card_form .hint { margin: 2px 0 0; line-height: 1.35; }
+.sl-head { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: #1d2129; }
+.sl-head .mono { font-weight: 500; }
+/* sliders: sem o valor flutuante sobre o marcador e sem os rótulos de mínimo/máximo */
+.st-key-card_form [data-testid="stSliderThumbValue"],
+.st-key-card_form [data-testid="stSliderTickBar"],
+.st-key-card_form [data-testid="stTickBar"],
+.st-key-card_form [data-testid="stTickBarMin"],
+.st-key-card_form [data-testid="stTickBarMax"] { display: none !important; }
 hr.sep { border: none; border-top: 1px solid #eeece7; margin: 4px 0 10px; }
 .mono { font-family: 'IBM Plex Mono', monospace; }
 .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #8a8d94; margin: 4px 0 8px; }
@@ -178,17 +191,20 @@ with col_form, st.container(key="card_form"):
     c_b.button("Restaurar", on_click=restaurar, use_container_width=True, help="Restaurar valores padrão")
 
     html('<div class="eyebrow">Perfil</div>')
-    st.slider("Idade", 18, 100, key="age", format="%d anos")
+    titulo_slider("Idade", f"{st.session_state.age} anos")
+    st.slider("Idade", 18, 100, key="age", format="%d anos", label_visibility="collapsed")
     st.checkbox("Renda não informada", key="renda_ni")
     st.number_input("Renda mensal (R$)", 0, 100000, step=100, key="renda", disabled=st.session_state.renda_ni)
     st.checkbox("Dependentes não informado", key="dep_ni")
     st.number_input("Dependentes", 0, 20, key="dep", disabled=st.session_state.dep_ni)
 
     html('<hr class="sep"><div class="eyebrow">Endividamento</div>')
-    st.slider("Uso do crédito rotativo", 0, 110, step=1, key="rev", format="%d%%")
-    html('<div class="hint">Saldo usado em cartões e linhas sem garantia sobre o limite total</div>')
-    st.slider("Comprometimento da renda", 0, 140, step=1, key="debt", format="%d%%")
-    html('<div class="hint">Pagamentos mensais de dívidas sobre a renda bruta</div>')
+    titulo_slider("Uso do crédito rotativo", f"{st.session_state.rev}%",
+                  "Saldo usado em cartões e linhas sem garantia sobre o limite total")
+    st.slider("Uso do crédito rotativo", 0, 110, step=1, key="rev", format="%d%%", label_visibility="collapsed")
+    titulo_slider("Comprometimento da renda", f"{st.session_state.debt}%",
+                  "Pagamentos mensais de dívidas sobre a renda bruta")
+    st.slider("Comprometimento da renda", 0, 140, step=1, key="debt", format="%d%%", label_visibility="collapsed")
 
     html('<hr class="sep"><div class="eyebrow">Atrasos nos últimos 2 anos</div>')
     st.number_input("30 a 59 dias", 0, 20, key="a30")
