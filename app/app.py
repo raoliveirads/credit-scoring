@@ -128,8 +128,8 @@ section[data-testid="stSidebar"] hr { margin: 12px 0; border-color: #eeece7; }
 .st-key-card_form { gap: .65rem !important; padding: 18px 20px; }
 .st-key-card_form [data-testid="stWidgetLabel"] p { font-size: 13px; }
 .st-key-card_form [data-testid="stTickBar"] { display: none; }
-.st-key-card_form .eyebrow { margin: 0; }
-.st-key-card_form .hint { margin: -6px 0 0; line-height: 1.35; }
+.st-key-card_form .eyebrow { margin: 0 0 10px; }
+.st-key-card_form .hint { margin: -6px 0 10px; line-height: 1.35; }
 hr.sep { border: none; border-top: 1px solid #eeece7; margin: 4px 0 10px; }
 .mono { font-family: 'IBM Plex Mono', monospace; }
 .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #8a8d94; margin: 4px 0 8px; }
