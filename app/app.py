@@ -102,6 +102,10 @@ def aplicar(mudancas):
         st.session_state[k] = v
 
 
+if st.query_params.get("restaurar"):
+    restaurar()
+    st.query_params.clear()
+
 # ── Estilo ─────────────────────────────────────────────────
 html("""
 <style>
@@ -144,6 +148,10 @@ section[data-testid="stSidebar"] hr { margin: 12px 0; border-color: #eeece7; }
 .st-key-card_form [data-testid="stTickBarMin"],
 .st-key-card_form [data-testid="stTickBarMax"] { display: none !important; }
 /* botão "Restaurar padrão" como link azul */
+.form-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.form-head .h3 { margin: 0 !important; line-height: 1.4; }
+.form-head a { font-size: 13px; line-height: 1.4; color: #2c4f86 !important; text-decoration: none; }
+.form-head a:hover { color: #1d3a66 !important; text-decoration: underline; }
 .st-key-cab_form { display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; flex-wrap: nowrap !important; gap: 12px !important; }
 .st-key-cab_form > div { width: auto !important; flex: 0 0 auto !important; }
 .st-key-cab_form p.h3 { margin: 0 !important; line-height: 1.4; }
@@ -195,10 +203,8 @@ cabecalho = st.container()
 col_form, col_main = st.columns([1, 2.4], gap="large")
 
 with col_form, st.container(key="card_form"):
-    with st.container(key="cab_form"):
-        html('<p class="h3">Dados do cliente</p>')
-        with st.container(key="btn_restaurar"):
-            st.button("Restaurar padrão", on_click=restaurar, type="tertiary")
+    html('<div class="form-head"><p class="h3">Dados do cliente</p>'
+         '<a href="?restaurar=1" target="_self">Restaurar padrão</a></div><hr class="sep">')
 
     html('<div class="eyebrow">Perfil</div>')
     titulo_slider("Idade", f"{st.session_state.age} anos")
