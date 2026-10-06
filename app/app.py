@@ -143,6 +143,11 @@ section[data-testid="stSidebar"] hr { margin: 12px 0; border-color: #eeece7; }
 .st-key-card_form [data-testid="stTickBar"],
 .st-key-card_form [data-testid="stTickBarMin"],
 .st-key-card_form [data-testid="stTickBarMax"] { display: none !important; }
+/* botão "Restaurar padrão" como link azul */
+.st-key-btn_restaurar { align-items: flex-end; }
+.st-key-btn_restaurar button { background: none !important; border: none !important; padding: 6px 0 0 !important; min-height: 0 !important; color: #2c4f86 !important; box-shadow: none !important; }
+.st-key-btn_restaurar button p { font-size: 13px !important; color: #2c4f86 !important; }
+.st-key-btn_restaurar button:hover p { color: #1d3a66 !important; text-decoration: underline; }
 hr.sep { border: none; border-top: 1px solid #eeece7; margin: 4px 0 10px; }
 .mono { font-family: 'IBM Plex Mono', monospace; }
 .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #8a8d94; margin: 4px 0 8px; }
@@ -188,7 +193,8 @@ col_form, col_main = st.columns([1, 2.4], gap="large")
 with col_form, st.container(key="card_form"):
     c_t, c_b = st.columns([3, 2], vertical_alignment="center")
     c_t.markdown('<p class="h3">Dados do cliente</p>', unsafe_allow_html=True)
-    c_b.button("Restaurar", on_click=restaurar, use_container_width=True, help="Restaurar valores padrão")
+    with c_b, st.container(key="btn_restaurar"):
+        st.button("Restaurar padrão", on_click=restaurar, type="tertiary")
 
     html('<div class="eyebrow">Perfil</div>')
     titulo_slider("Idade", f"{st.session_state.age} anos")
