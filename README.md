@@ -1,7 +1,6 @@
 # Credit Scoring — Previsão de Inadimplência
 
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://credit-scoring-renan.streamlit.app/)
-
 ![Python](https://img.shields.io/badge/Python-3.10+-blue)
 ![XGBoost](https://img.shields.io/badge/XGBoost-1.7+-orange)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.x-red)
