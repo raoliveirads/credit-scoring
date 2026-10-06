@@ -2,23 +2,23 @@ import os
 import sys
 
 import numpy as np
-import pandas as pd
 import streamlit as st
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.predictor import predizer
 
+# Tema claro definido no próprio app (dispensa .streamlit/config.toml)
+try:
+    for _k, _v in {"theme.base": "light", "theme.primaryColor": "#2c4f86", "theme.backgroundColor": "#f6f5f2",
+                   "theme.secondaryBackgroundColor": "#ffffff", "theme.textColor": "#1d2129"}.items():
+        st._config.set_option(_k, _v)
+except Exception:
+    pass
+
 st.set_page_config(page_title="Análise de Crédito", layout="wide", initial_sidebar_state="expanded")
 
 # ── Configuração ───────────────────────────────────────────
 AUC, KS = 0.8697, 0.58
-RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# A carteira usa o primeiro arquivo encontrado:
-#   1) data/scores_carteira.npy  → probabilidades já calculadas (ex.: conjunto de teste)
-#   2) data/cs-training.csv      → amostra pontuada pelo modelo (calculada uma vez e cacheada)
-SCORES_PATH = os.path.join(RAIZ, "data", "scores_carteira.npy")
-CSV_PATH = os.path.join(RAIZ, "data", "cs-training.csv")
-AMOSTRA_CARTEIRA = 1500
 
 # Rodapé — troque pelos seus dados
 AUTOR = "Renan Amaral"
@@ -28,7 +28,7 @@ LINKS = [
     ("LinkedIn", "https://www.linkedin.com/in/renanammaral/", "linkedin"),
 ]
 
-PADRAO = dict(age=35, renda=5400, renda_ni=False, dep=0, dep_ni=False, rev=0.30, debt=0.30,
+PADRAO = dict(age=35, renda=5400, renda_ni=False, dep=0, dep_ni=False, rev=30, debt=30,
               a30=0, a60=0, a90=0, linhas=5, imob=1)
 # Perfil de referência usado para explicar o resultado
 REF = {"RevolvingUtilizationOfUnsecuredLines": 0.15, "age": 52, "NumberOfTime30-59DaysPastDueNotWorse": 0,
@@ -81,18 +81,6 @@ def prob(d):
     return predizer(d)["probabilidade"]
 
 
-@st.cache_data(show_spinner="Carregando carteira de referência...")
-def carregar_carteira():
-    if os.path.exists(SCORES_PATH):
-        return np.sort(np.load(SCORES_PATH))
-    if os.path.exists(CSV_PATH):
-        df = pd.read_csv(CSV_PATH, index_col=0).drop(columns=["SeriousDlqin2yrs"], errors="ignore")
-        df = df.sample(min(AMOSTRA_CARTEIRA, len(df)), random_state=42)
-        df = df.astype(object).where(pd.notna(df), None)
-        return np.sort([prob(r) for r in df.to_dict("records")])
-    return None
-
-
 # ── Estado e callbacks ─────────────────────────────────────
 for k, v in PADRAO.items():
     st.session_state.setdefault(k, v)
@@ -116,10 +104,20 @@ html, body, .stApp, [class*="css"], button, input { font-family: 'IBM Plex Sans'
 .stApp { background: #f6f5f2; color: #1d2129; }
 #MainMenu, footer, [data-testid="stToolbar"], [data-testid="stDecoration"] { display: none; }
 header[data-testid="stHeader"] { background: transparent; }
-.block-container { max-width: 1360px; padding-top: 1.2rem; padding-bottom: 3rem; }
+.block-container { max-width: none; padding: 1.2rem 2.5rem 3rem; }
 section[data-testid="stSidebar"] { background: #fff; border-right: 1px solid #e3e1db; }
 section[data-testid="stSidebar"] hr { margin: 12px 0; border-color: #eeece7; }
-[data-testid="stVerticalBlockBorderWrapper"] { background: #fff; border-color: #e3e1db !important; border-radius: 10px; }
+[data-testid="stVerticalBlockBorderWrapper"]:has(.card-marker),
+[data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .card-marker) { background: #fff; border-color: #e3e1db !important; border-radius: 10px; }
+[data-baseweb="input"], [data-baseweb="input"] > div, [data-testid="stNumberInput"] input { background: #fff !important; color: #1d2129 !important; }
+[data-testid="stNumberInput"] button { background: #fff !important; color: #4a4e57 !important; }
+[data-testid="stNumberInputContainer"] { border: 1px solid #d9d6cf; border-radius: 6px; }
+[data-testid="stSlider"] [role="slider"] { background-color: #2c4f86 !important; border-color: #2c4f86 !important; }
+[data-testid="stSliderThumbValue"], [data-testid="stThumbValue"] { color: #2c4f86 !important; }
+[data-testid="stCheckbox"] input:checked + div, [data-testid="stCheckbox"] label > span:first-child { border-color: #2c4f86 !important; }
+[data-testid="stCheckbox"] label[data-baseweb="checkbox"] > span:first-child { background-color: #fff; border: 1px solid #c9c6bf; }
+[data-testid="stCheckbox"] label[data-baseweb="checkbox"]:has(input:checked) > span:first-child { background-color: #2c4f86 !important; }
+[data-testid="stExpander"] summary, [data-testid="stExpander"] details { background: #fff; color: #1d2129; }
 .stSlider label p, .stNumberInput label p, .stCheckbox label p { font-size: 14px; color: #1d2129; }
 .stButton button { border-radius: 6px; border: 1px solid #d9d6cf; background: #fff; color: #1d2129; font-size: 13px; }
 .stButton button:hover { background: #f4f2ee; border-color: #c9c6bf; color: #1d2129; }
@@ -147,8 +145,6 @@ section[data-testid="stSidebar"] hr { margin: 12px 0; border-color: #eeece7; }
 .crow { display: grid; grid-template-columns: 1fr 1fr; row-gap: 6px; padding: 9px 0; border-bottom: 1px solid #f1efea; }
 .crow .t { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
 .neg { display: flex; justify-content: flex-end; height: 8px; border-right: 1px solid #c9c6bf; }
-.hist { position: relative; height: 180px; display: flex; align-items: flex-end; gap: 2px; border-bottom: 1px solid #d9d6cf; margin-top: 20px; }
-.hist .b { flex: 1; border-radius: 2px 2px 0 0; }
 .scen-t { font-size: 14px; font-weight: 500; }
 .flip { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 7px; border-radius: 4px; margin-left: 6px; }
 .scen-n { display: flex; align-items: baseline; gap: 10px; margin: 10px 0 6px; }
@@ -176,9 +172,9 @@ with st.sidebar:
 
     st.divider()
     html('<div class="eyebrow">Endividamento</div>')
-    st.slider("Uso do crédito rotativo", 0.0, 1.1, step=0.01, key="rev", format="%.2f")
+    st.slider("Uso do crédito rotativo", 0, 110, step=1, key="rev", format="%d%%")
     html('<div class="hint">Saldo usado em cartões e linhas sem garantia sobre o limite total</div>')
-    st.slider("Comprometimento da renda", 0.0, 1.4, step=0.01, key="debt", format="%.2f")
+    st.slider("Comprometimento da renda", 0, 140, step=1, key="debt", format="%d%%")
     html('<div class="hint">Pagamentos mensais de dívidas sobre a renda bruta</div>')
 
     st.divider()
@@ -197,10 +193,10 @@ S = st.session_state
 
 def montar(s):
     return {
-        "RevolvingUtilizationOfUnsecuredLines": s["rev"],
+        "RevolvingUtilizationOfUnsecuredLines": s["rev"] / 100,
         "age": s["age"],
         "NumberOfTime30-59DaysPastDueNotWorse": s["a30"],
-        "DebtRatio": s["debt"],
+        "DebtRatio": s["debt"] / 100,
         "MonthlyIncome": None if s["renda_ni"] else float(s["renda"]),
         "NumberOfOpenCreditLinesAndLoans": s["linhas"],
         "NumberOfTimes90DaysLate": s["a90"],
@@ -268,12 +264,8 @@ def valor_legivel(chave):
     return str(int(v))
 
 
-# ── Carteira ───────────────────────────────────────────────
-carteira = carregar_carteira()
-percentil = int(round(np.searchsorted(carteira, p) / len(carteira) * 100)) if carteira is not None else None
-
 # ── Card principal ─────────────────────────────────────────
-escala = max(threshold * 2, 0.6)
+escala = min(1.0, max(threshold * 2, 0.6))
 pos = lambda v: min(v, escala) / escala * 100
 faixa = threshold * 0.3 / escala * 100
 badge_bg = "#2f7a52" if aprovado else "#b23a31"
@@ -298,11 +290,10 @@ html(f"""
     <div class="scale mono">
       <span style="position:absolute;left:0">0%</span>
       <span style="position:absolute;left:{pos(threshold)}%;transform:translateX(-50%);color:#f3f2ee">corte {pct(threshold, 0)}</span>
-      <span style="position:absolute;right:0">{pct(escala, 0)}+</span>
+      <span style="position:absolute;right:0">{pct(escala, 0)}{"" if escala >= 1 else "+"}</span>
     </div>
   </div>
   <div class="stats">
-    <div class="stat"><span>Posição na carteira</span><b>{f"{percentil}º percentil" if percentil is not None else "—"}</b></div>
     <div class="stat"><span>Distância do corte</span><b class="mono">{pp(p - threshold)}</b></div>
     <div class="stat"><span>Maior peso no risco</span><b>{maior_alta}</b></div>
   </div>
@@ -312,11 +303,42 @@ html(f"""
 if aprovado and p > threshold * 0.7:
     html(f'<div class="note"><b>Recomendada revisão manual.</b> Cliente aprovado a {num((threshold - p) * 100)} pontos do corte de reprovação.</div>')
 
-# ── Explicação + carteira ──────────────────────────────────
-col_a, col_b = st.columns(2, gap="medium")
+# ── Simulação ──────────────────────────────────────────────
+cenarios = []
+if estado["rev"] > 30:
+    cenarios.append(("Reduzir uso do rotativo para 30%", {"rev": 30}))
+if estado["debt"] > 35:
+    cenarios.append(("Reduzir comprometimento da renda para 35%", {"debt": 35}))
+if estado["renda_ni"]:
+    cenarios.append((f"Informar renda de {brl(6700)}", {"renda_ni": False, "renda": 6700}))
+if estado["dep_ni"]:
+    cenarios.append(("Informar número de dependentes", {"dep_ni": False}))
+if len(cenarios) < 3 and estado["rev"] <= 80:
+    novo = min(110, estado["rev"] + 40)
+    cenarios.append((f"Rotativo subir para {novo}%", {"rev": novo}))
 
-with col_a:
+
+def p_com_rotativo(r):
+    return prob({**dados, "RevolvingUtilizationOfUnsecuredLines": r})
+
+
+if aprovado:
+    grade = np.arange(estado["rev"] / 100, 1.1001, 0.02)
+    r = next((x for x in grade if p_com_rotativo(x) >= threshold), None)
+    virada = "Segue aprovado mesmo com 110% de rotativo" if r is None else f"Reprovaria com rotativo a partir de {pct(r, 0)}"
+else:
+    grade = np.arange(estado["rev"] / 100, -0.0001, -0.02)
+    r = next((x for x in grade if p_com_rotativo(x) < threshold), None)
+    virada = "Nenhum nível de rotativo aprova este perfil" if r is None else f"Aprovaria com rotativo até {pct(max(0, r), 0)}"
+
+# ── Explicação ─────────────────────────────────────────────
+# Empilhados, como no protótipo: explicação e, logo abaixo, simulação
+col_exp = st.container()
+col_sim = st.container()
+
+with col_exp:
     with st.container(border=True):
+        html('<span class="card-marker"></span>')
         linhas = ""
         mx = max([abs(d) for _, d in contribs] + [0.01])
         for chave, d in contribs:
@@ -333,103 +355,43 @@ with col_a:
             linhas = '<div class="sub" style="padding:12px 0">Perfil igual ao de referência.</div>'
         html(f"""
         <p class="h3">O que explica o resultado</p>
-        <div class="sub">Variação em pontos percentuais em relação ao perfil de referência da carteira</div>
+        <div class="sub">Variação em pontos percentuais em relação a um perfil de referência</div>
         <div class="axis mono"><span>reduz o risco</span><span>aumenta o risco</span></div>
         {linhas}
         """)
 
-with col_b:
+with col_sim:
     with st.container(border=True):
-        if carteira is None:
-            html("""<p class="h3">Posição na carteira</p>
-            <div class="sub">Adicione data/scores_carteira.npy ou data/cs-training.csv para exibir a distribuição.</div>""")
+        html('<span class="card-marker"></span>')
+        h1, h2 = st.columns([3, 2])
+        with h1:
+            html('<p class="h3">Simulação</p><div class="sub">O que mudaria a análise mantendo o restante do perfil</div>')
+        with h2:
+            html(f'<div style="display:flex;justify-content:flex-end"><span style="font-size:13px;background:#f4f2ee;border-radius:6px;padding:6px 10px">{virada}</span></div>')
+
+        if cenarios:
+            cols = st.columns(len(cenarios), gap="medium")
+            for col, (titulo, mud) in zip(cols, cenarios):
+                p2 = prob(montar({**estado, **mud}))
+                flip = ""
+                if (p2 < threshold) != aprovado:
+                    bg, fg, txt = (("#f8e7e4", "#8f2f27", "Passa a reprovar") if aprovado
+                                   else ("#e6f3ea", "#2a5e40", "Passa a aprovar"))
+                    flip = f'<span class="flip" style="background:{bg};color:{fg}">{txt}</span>'
+                cor = "#a8322b" if p2 > p else "#2f7a52"
+                with col:
+                    html(f"""
+                    <div style="border-top:1px solid #eeece7;padding-top:14px;margin-top:4px">
+                      <span class="scen-t">{titulo}</span>{flip}
+                      <div class="scen-n mono">
+                        <span style="font-size:13px;color:#8a8d94;text-decoration:line-through">{pct(p)}</span>
+                        <span style="font-size:22px;font-weight:500">{pct(p2)}</span>
+                        <span style="font-size:13px;color:{cor}">{pp(p2 - p)}</span>
+                      </div>
+                    </div>""")
+                    st.button("Aplicar ao perfil", key=f"apl_{titulo}", on_click=aplicar, args=(mud,))
         else:
-            lim, nb = 0.6, 30
-            cont, _ = np.histogram(np.clip(carteira, 0, lim - 1e-9), bins=nb, range=(0, lim))
-            mxc = cont.max()
-            bin_cli = min(nb - 1, int(p / lim * nb))
-            barras = ""
-            for i, c in enumerate(cont):
-                meio = (i + 0.5) / nb * lim
-                cor = ("#a9d4b8" if meio < threshold * 0.4 else "#e6d48f" if meio < threshold * 0.7
-                       else "#e8b48c" if meio < threshold else "#e09d93")
-                barras += f'<div class="b" style="height:{max(1, c / mxc * 100)}%;background:{cor};opacity:{1 if i == bin_cli else .7}"></div>'
-            acima = (carteira >= threshold).mean()
-            html(f"""
-            <p class="h3">Posição na carteira</p>
-            <div class="sub">Distribuição da probabilidade estimada em {num(len(carteira), 0)} clientes</div>
-            <div class="hist">{barras}
-              <div style="position:absolute;left:{min(threshold, lim) / lim * 100}%;top:0;bottom:0;border-left:1px dashed #6b6f78"></div>
-              <div style="position:absolute;left:{min(p, lim) / lim * 100}%;top:-6px;bottom:0;width:2px;margin-left:-1px;background:#15181e">
-                <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:10px;height:10px;border-radius:50%;background:#15181e;box-shadow:0 0 0 3px #fff"></div>
-              </div>
-            </div>
-            <div class="mono" style="display:flex;justify-content:space-between;font-size:11px;color:#8a8d94;padding-top:6px">
-              <span>0%</span><span>{pct(lim / 2, 0)}</span><span>{pct(lim, 0)}+</span></div>
-            <div style="font-size:13px;line-height:1.5;margin-top:14px">
-              <b style="font-weight:600">Risco maior que o de {percentil}% da carteira.</b><br>
-              <span style="color:#6b6f78">{pct(acima)} da carteira está acima do corte de {pct(threshold, 0)}.</span>
-            </div>""")
-
-# ── Simulação ──────────────────────────────────────────────
-cenarios = []
-if estado["rev"] > 0.3:
-    cenarios.append(("Reduzir uso do rotativo para 30%", {"rev": 0.30}))
-if estado["debt"] > 0.35:
-    cenarios.append(("Reduzir comprometimento da renda para 35%", {"debt": 0.35}))
-if estado["renda_ni"]:
-    cenarios.append((f"Informar renda de {brl(6700)}", {"renda_ni": False, "renda": 6700}))
-if estado["dep_ni"]:
-    cenarios.append(("Informar número de dependentes", {"dep_ni": False}))
-if len(cenarios) < 3 and estado["rev"] <= 0.8:
-    novo = round(min(1.1, estado["rev"] + 0.4), 2)
-    cenarios.append((f"Rotativo subir para {pct(novo, 0)}", {"rev": novo}))
-
-
-def p_com_rotativo(r):
-    return prob({**dados, "RevolvingUtilizationOfUnsecuredLines": r})
-
-
-if aprovado:
-    grade = np.arange(estado["rev"], 1.1001, 0.02)
-    r = next((x for x in grade if p_com_rotativo(x) >= threshold), None)
-    virada = "Segue aprovado mesmo com 110% de rotativo" if r is None else f"Reprovaria com rotativo a partir de {pct(r, 0)}"
-else:
-    grade = np.arange(estado["rev"], -0.0001, -0.02)
-    r = next((x for x in grade if p_com_rotativo(x) < threshold), None)
-    virada = "Nenhum nível de rotativo aprova este perfil" if r is None else f"Aprovaria com rotativo até {pct(max(0, r), 0)}"
-
-with st.container(border=True):
-    c1, c2 = st.columns([3, 2])
-    with c1:
-        html('<p class="h3">Simulação</p><div class="sub">O que mudaria a análise mantendo o restante do perfil</div>')
-    with c2:
-        html(f'<div style="font-size:13px;background:#f4f2ee;border-radius:6px;padding:6px 10px;text-align:center">{virada}</div>')
-
-    if cenarios:
-        cols = st.columns(len(cenarios), gap="medium")
-        for col, (titulo, mud) in zip(cols, cenarios):
-            p2 = prob(montar({**estado, **mud}))
-            vira = (p2 < threshold) != aprovado
-            flip = ""
-            if vira:
-                bg, fg, txt = (("#f8e7e4", "#8f2f27", "Passa a reprovar") if aprovado
-                               else ("#e6f3ea", "#2a5e40", "Passa a aprovar"))
-                flip = f'<span class="flip" style="background:{bg};color:{fg}">{txt}</span>'
-            cor = "#a8322b" if p2 > p else "#2f7a52"
-            with col:
-                html(f"""
-                <div style="border-top:1px solid #eeece7;padding-top:14px;margin-top:8px">
-                  <span class="scen-t">{titulo}</span>{flip}
-                  <div class="scen-n mono">
-                    <span style="font-size:13px;color:#8a8d94;text-decoration:line-through">{pct(p)}</span>
-                    <span style="font-size:22px;font-weight:500">{pct(p2)}</span>
-                    <span style="font-size:13px;color:{cor}">{pp(p2 - p)}</span>
-                  </div>
-                </div>""")
-                st.button("Aplicar ao perfil", key=f"apl_{titulo}", on_click=aplicar, args=(mud,))
-    else:
-        html('<div class="sub" style="padding-top:10px">Rotativo e comprometimento da renda já estão nos níveis de referência.</div>')
+            html('<div class="sub" style="padding-top:10px">Rotativo e comprometimento da renda já estão nos níveis de referência.</div>')
 
 # ── Variáveis técnicas ─────────────────────────────────────
 with st.expander("Variáveis enviadas ao modelo"):
