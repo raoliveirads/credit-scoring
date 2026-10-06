@@ -144,8 +144,12 @@ section[data-testid="stSidebar"] hr { margin: 12px 0; border-color: #eeece7; }
 .st-key-card_form [data-testid="stTickBarMin"],
 .st-key-card_form [data-testid="stTickBarMax"] { display: none !important; }
 /* botão "Restaurar padrão" como link azul */
-.st-key-btn_restaurar { align-items: flex-end; }
-.st-key-btn_restaurar button { background: none !important; border: none !important; padding: 6px 0 0 !important; min-height: 0 !important; color: #2c4f86 !important; box-shadow: none !important; }
+.st-key-cab_form { display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; flex-wrap: nowrap !important; gap: 12px !important; }
+.st-key-cab_form > div { width: auto !important; flex: 0 0 auto !important; }
+.st-key-cab_form p.h3 { margin: 0 !important; line-height: 1.4; }
+.st-key-btn_restaurar { width: auto !important; align-items: flex-end; }
+.st-key-btn_restaurar [data-testid="stButton"] { line-height: 1.4; }
+.st-key-btn_restaurar button { background: none !important; border: none !important; padding: 0 !important; min-height: 0 !important; line-height: 1.4 !important; color: #2c4f86 !important; box-shadow: none !important; }
 .st-key-btn_restaurar button p { font-size: 13px !important; color: #2c4f86 !important; }
 .st-key-btn_restaurar button:hover p { color: #1d3a66 !important; text-decoration: underline; }
 hr.sep { border: none; border-top: 1px solid #eeece7; margin: 4px 0 10px; }
@@ -191,10 +195,10 @@ cabecalho = st.container()
 col_form, col_main = st.columns([1, 2.4], gap="large")
 
 with col_form, st.container(key="card_form"):
-    c_t, c_b = st.columns([3, 2], vertical_alignment="center")
-    c_t.markdown('<p class="h3">Dados do cliente</p>', unsafe_allow_html=True)
-    with c_b, st.container(key="btn_restaurar"):
-        st.button("Restaurar padrão", on_click=restaurar, type="tertiary")
+    with st.container(key="cab_form"):
+        html('<p class="h3">Dados do cliente</p>')
+        with st.container(key="btn_restaurar"):
+            st.button("Restaurar padrão", on_click=restaurar, type="tertiary")
 
     html('<div class="eyebrow">Perfil</div>')
     titulo_slider("Idade", f"{st.session_state.age} anos")
