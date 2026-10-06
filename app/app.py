@@ -157,9 +157,11 @@ hr.sep { border: none; border-top: 1px solid #eeece7; margin: 4px 0 10px; }
 .scen-t { font-size: 14px; font-weight: 500; }
 .flip { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 7px; border-radius: 4px; margin-left: 6px; }
 .scen-n { display: flex; align-items: baseline; gap: 10px; margin: 10px 0 6px; }
-.rodape { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; border-top: 1px solid #e3e1db; margin-top: 32px; padding-top: 18px; font-size: 13px; color: #6b6f78; }
+.rodape { position: fixed; left: 0; right: 0; bottom: 0; z-index: 999; background: rgba(251,250,248,.96); backdrop-filter: blur(6px); border-top: 1px solid #e3e1db; font-size: 13px; color: #6b6f78; }
+.rodape-in { max-width: 1360px; margin: 0 auto; padding: 8px 1.75rem; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.block-container { padding-bottom: 80px !important; }
 .rodape nav { display: flex; gap: 6px; flex-wrap: wrap; }
-.rodape a { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid #e3e1db; border-radius: 6px; background: #fff; color: #1d2129 !important; text-decoration: none; }
+.rodape a { display: flex; align-items: center; gap: 8px; padding: 5px 10px; border: 1px solid #e3e1db; border-radius: 6px; background: #fff; color: #1d2129 !important; text-decoration: none; }
 .rodape a:hover { background: #f4f2ee; }
 .rodape img { width: 16px; height: 16px; opacity: .75; }
 .frow { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f4f2ee; font-size: 13px; }
@@ -417,4 +419,4 @@ links_html = "".join(
     f'<a href="{url}" target="_blank"><img src="https://unpkg.com/lucide-static@0.400.0/icons/{icone}.svg" alt="">{nome}</a>'
     for nome, url, icone in LINKS
 )
-html(f'<div class="rodape"><span>Desenvolvido por {AUTOR} · Modelo treinado na base Give Me Some Credit</span><nav>{links_html}</nav></div>')
+html(f'<div class="rodape"><div class="rodape-in"><span>Desenvolvido por {AUTOR} · Modelo treinado na base Give Me Some Credit</span><nav>{links_html}</nav></div></div>')
