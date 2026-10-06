@@ -1,150 +1,449 @@
-
-import streamlit as st
-import sys
 import os
-import json
-import numpy as np
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import sys
 
+import numpy as np
+import pandas as pd
+import streamlit as st
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.predictor import predizer
 
-# ── Configuração da página ─────────────────────────────────
-st.set_page_config(
-    page_title="Credit Scoring — Give Me Some Credit",
-    page_icon="🏦",
-    layout="wide"
-)
+st.set_page_config(page_title="Análise de Crédito", layout="wide", initial_sidebar_state="expanded")
 
-st.title("🏦 Credit Scoring — Análise de Risco de Crédito")
-st.markdown("Preencha os dados do cliente para obter a análise de risco de inadimplência.")
-st.divider()
+# ── Configuração ───────────────────────────────────────────
+AUC, KS = 0.8697, 0.58
+RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# A carteira usa o primeiro arquivo encontrado:
+#   1) data/scores_carteira.npy  → probabilidades já calculadas (ex.: conjunto de teste)
+#   2) data/cs-training.csv      → amostra pontuada pelo modelo (calculada uma vez e cacheada)
+SCORES_PATH = os.path.join(RAIZ, "data", "scores_carteira.npy")
+CSV_PATH = os.path.join(RAIZ, "data", "cs-training.csv")
+AMOSTRA_CARTEIRA = 1500
 
-# ── Sidebar — Formulário ───────────────────────────────────
+# Rodapé — troque pelos seus dados
+AUTOR = "Renan Amaral"
+LINKS = [
+    ("GitHub", "https://github.com/raoliveirads", "github"),
+    ("Portfólio", "https://raoliveirads.github.io/", "globe"),
+    ("LinkedIn", "https://www.linkedin.com/in/renanammaral/", "linkedin"),
+]
+
+PADRAO = dict(age=35, renda=5400, renda_ni=False, dep=0, dep_ni=False, rev=0.30, debt=0.30,
+              a30=0, a60=0, a90=0, linhas=5, imob=1)
+# Perfil de referência usado para explicar o resultado
+REF = {"RevolvingUtilizationOfUnsecuredLines": 0.15, "age": 52, "NumberOfTime30-59DaysPastDueNotWorse": 0,
+       "DebtRatio": 0.35, "MonthlyIncome": 6700.0, "NumberOfOpenCreditLinesAndLoans": 8,
+       "NumberOfTimes90DaysLate": 0, "NumberRealEstateLoansOrLines": 1,
+       "NumberOfTime60-89DaysPastDueNotWorse": 0, "NumberOfDependents": 0.0}
+
+LABELS = {
+    "RevolvingUtilizationOfUnsecuredLines": "Uso do rotativo", "age": "Idade",
+    "NumberOfTime30-59DaysPastDueNotWorse": "Atrasos 30–59 dias", "DebtRatio": "Comprometimento da renda",
+    "MonthlyIncome": "Renda mensal", "NumberOfOpenCreditLinesAndLoans": "Linhas abertas",
+    "NumberOfTimes90DaysLate": "Atrasos 90+ dias", "NumberRealEstateLoansOrLines": "Financiamentos imobiliários",
+    "NumberOfTime60-89DaysPastDueNotWorse": "Atrasos 60–89 dias", "NumberOfDependents": "Dependentes",
+    "teve_qualquer_atraso": "Teve algum atraso", "flag_missing_income": "Renda ausente",
+}
+
+VERDE, AMARELO, LARANJA, VERMELHO = "#3f8f62", "#c9a227", "#d07a3a", "#c2453d"
+
+
+# ── Utilidades ─────────────────────────────────────────────
+def html(s):
+    st.markdown("".join(l.strip() for l in s.splitlines()), unsafe_allow_html=True)
+
+
+def num(v, d=1):
+    return f"{v:,.{d}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def pct(v, d=1):
+    return num(v * 100, d) + "%"
+
+
+def pp(v):
+    return ("+" if v >= 0 else "−") + num(abs(v) * 100) + " pp"
+
+
+def brl(v):
+    return "R$ " + num(v, 0)
+
+
+def fmt(v):
+    if v is None or (isinstance(v, float) and np.isnan(v)):
+        return "—"
+    if isinstance(v, float) and not v.is_integer():
+        return num(v, 2)
+    return str(int(v))
+
+
+def prob(d):
+    return predizer(d)["probabilidade"]
+
+
+@st.cache_data(show_spinner="Carregando carteira de referência...")
+def carregar_carteira():
+    if os.path.exists(SCORES_PATH):
+        return np.sort(np.load(SCORES_PATH))
+    if os.path.exists(CSV_PATH):
+        df = pd.read_csv(CSV_PATH, index_col=0).drop(columns=["SeriousDlqin2yrs"], errors="ignore")
+        df = df.sample(min(AMOSTRA_CARTEIRA, len(df)), random_state=42)
+        df = df.astype(object).where(pd.notna(df), None)
+        return np.sort([prob(r) for r in df.to_dict("records")])
+    return None
+
+
+# ── Estado e callbacks ─────────────────────────────────────
+for k, v in PADRAO.items():
+    st.session_state.setdefault(k, v)
+
+
+def restaurar():
+    for k, v in PADRAO.items():
+        st.session_state[k] = v
+
+
+def aplicar(mudancas):
+    for k, v in mudancas.items():
+        st.session_state[k] = v
+
+
+# ── Estilo ─────────────────────────────────────────────────
+html("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+html, body, .stApp, [class*="css"], button, input { font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+.stApp { background: #f6f5f2; color: #1d2129; }
+#MainMenu, footer, [data-testid="stToolbar"], [data-testid="stDecoration"] { display: none; }
+header[data-testid="stHeader"] { background: transparent; }
+.block-container { max-width: 1360px; padding-top: 1.2rem; padding-bottom: 3rem; }
+section[data-testid="stSidebar"] { background: #fff; border-right: 1px solid #e3e1db; }
+section[data-testid="stSidebar"] hr { margin: 12px 0; border-color: #eeece7; }
+[data-testid="stVerticalBlockBorderWrapper"] { background: #fff; border-color: #e3e1db !important; border-radius: 10px; }
+.stSlider label p, .stNumberInput label p, .stCheckbox label p { font-size: 14px; color: #1d2129; }
+.stButton button { border-radius: 6px; border: 1px solid #d9d6cf; background: #fff; color: #1d2129; font-size: 13px; }
+.stButton button:hover { background: #f4f2ee; border-color: #c9c6bf; color: #1d2129; }
+[data-testid="stExpander"] { background: #fff; border: 1px solid #e3e1db; border-radius: 10px; }
+.mono { font-family: 'IBM Plex Mono', monospace; }
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #8a8d94; margin: 4px 0 8px; }
+.hint { font-size: 12px; color: #8a8d94; margin: -12px 0 10px; }
+.h3 { font-size: 15px; font-weight: 600; margin: 0; }
+.sub { font-size: 13px; color: #6b6f78; margin-top: 2px; }
+.hero { background: #15181e; color: #f3f2ee; border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
+.hero-top { padding: 30px 32px 24px; }
+.hero-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
+.hero-lbl { font-size: 13px; color: #a2a6ae; }
+.hero-num { font-size: 76px; font-weight: 500; letter-spacing: -.04em; line-height: 1; margin-top: 8px; }
+.badge { display: inline-block; padding: 9px 16px; border-radius: 6px; font-size: 16px; font-weight: 600; color: #fbfaf8; }
+.bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 28px; }
+.marker { position: absolute; top: -16px; width: 4px; height: 22px; margin-left: -2px; background: #fff; border-radius: 2px; box-shadow: 0 0 0 3px #15181e; }
+.scale { position: relative; height: 16px; font-size: 11px; color: #8a8e97; margin-top: 8px; }
+.stats { display: flex; flex-wrap: wrap; gap: 1px; background: #2a2e36; border-top: 1px solid #2a2e36; }
+.stat { flex: 1 1 170px; background: #15181e; padding: 16px 32px; }
+.stat span { display: block; font-size: 12px; color: #8a8e97; margin-bottom: 4px; }
+.stat b { font-size: 15px; font-weight: 500; }
+.note { background: #fbf5e6; border: 1px solid #ecdcae; border-radius: 8px; padding: 14px 16px; font-size: 14px; color: #4a3b12; margin-bottom: 16px; }
+.axis { display: flex; justify-content: space-between; font-size: 11px; color: #8a8d94; margin: 14px 0 4px; }
+.crow { display: grid; grid-template-columns: 1fr 1fr; row-gap: 6px; padding: 9px 0; border-bottom: 1px solid #f1efea; }
+.crow .t { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.neg { display: flex; justify-content: flex-end; height: 8px; border-right: 1px solid #c9c6bf; }
+.hist { position: relative; height: 180px; display: flex; align-items: flex-end; gap: 2px; border-bottom: 1px solid #d9d6cf; margin-top: 20px; }
+.hist .b { flex: 1; border-radius: 2px 2px 0 0; }
+.scen-t { font-size: 14px; font-weight: 500; }
+.flip { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 7px; border-radius: 4px; margin-left: 6px; }
+.scen-n { display: flex; align-items: baseline; gap: 10px; margin: 10px 0 6px; }
+.rodape { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; border-top: 1px solid #e3e1db; margin-top: 32px; padding-top: 18px; font-size: 13px; color: #6b6f78; }
+.rodape nav { display: flex; gap: 6px; flex-wrap: wrap; }
+.rodape a { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid #e3e1db; border-radius: 6px; background: #fff; color: #1d2129 !important; text-decoration: none; }
+.rodape a:hover { background: #f4f2ee; }
+.rodape img { width: 16px; height: 16px; opacity: .75; }
+.frow { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f4f2ee; font-size: 13px; }
+</style>
+""")
+
+# ── Barra lateral: dados do cliente ────────────────────────
 with st.sidebar:
-    st.header("📋 Dados do Cliente")
+    c_t, c_b = st.columns([3, 2])
+    c_t.markdown('<p class="h3" style="padding-top:6px">Dados do cliente</p>', unsafe_allow_html=True)
+    c_b.button("Restaurar padrão", on_click=restaurar, use_container_width=True)
 
-    age = st.slider("Idade", min_value=18, max_value=109, value=35)
+    html('<div class="eyebrow">Perfil</div>')
+    st.slider("Idade", 18, 100, key="age", format="%d anos")
+    st.checkbox("Renda não informada", key="renda_ni")
+    st.number_input("Renda mensal (R$)", 0, 100000, step=100, key="renda", disabled=st.session_state.renda_ni)
+    st.checkbox("Dependentes não informado", key="dep_ni")
+    st.number_input("Dependentes", 0, 20, key="dep", disabled=st.session_state.dep_ni)
 
-    monthly_income = st.number_input(
-        "Renda Mensal (R$) — deixe 0 se não souber",
-        min_value=0, max_value=100000, value=5400, step=100
-    )
+    st.divider()
+    html('<div class="eyebrow">Endividamento</div>')
+    st.slider("Uso do crédito rotativo", 0.0, 1.1, step=0.01, key="rev", format="%.2f")
+    html('<div class="hint">Saldo usado em cartões e linhas sem garantia sobre o limite total</div>')
+    st.slider("Comprometimento da renda", 0.0, 1.4, step=0.01, key="debt", format="%.2f")
+    html('<div class="hint">Pagamentos mensais de dívidas sobre a renda bruta</div>')
 
-    revolving = st.slider(
-        "Utilização do Crédito Rotativo (0 a 1)",
-        min_value=0.0, max_value=1.1, value=0.3, step=0.01
-    )
+    st.divider()
+    html('<div class="eyebrow">Atrasos nos últimos 2 anos</div>')
+    st.number_input("30 a 59 dias", 0, 20, key="a30")
+    st.number_input("60 a 89 dias", 0, 20, key="a60")
+    st.number_input("90 dias ou mais", 0, 20, key="a90")
 
-    debt_ratio = st.slider(
-        "Debt Ratio (dívida/renda)",
-        min_value=0.0, max_value=1.4, value=0.3, step=0.01
-    )
+    st.divider()
+    html('<div class="eyebrow">Linhas de crédito</div>')
+    st.number_input("Linhas e empréstimos abertos", 0, 50, key="linhas")
+    st.number_input("Financiamentos imobiliários", 0, 20, key="imob")
 
-    dependents = st.number_input(
-        "Número de Dependentes — deixe -1 se não souber",
-        min_value=-1, max_value=20, value=0
-    )
+S = st.session_state
 
-    st.subheader("📅 Histórico de Atrasos")
-    atraso_30 = st.number_input("Atrasos 30-59 dias", min_value=0, max_value=20, value=0)
-    atraso_60 = st.number_input("Atrasos 60-89 dias", min_value=0, max_value=20, value=0)
-    atraso_90 = st.number_input("Atrasos 90+ dias",   min_value=0, max_value=20, value=0)
 
-    st.subheader("💳 Linhas de Crédito")
-    open_credit = st.number_input("Linhas de crédito abertas", min_value=0, max_value=50, value=5)
-    real_estate = st.number_input("Empréstimos imobiliários",  min_value=0, max_value=20, value=1)
-
-    analisar = st.button("🔍 Analisar Cliente", use_container_width=True)
-
-# ── Painel principal ───────────────────────────────────────
-if analisar:
-    # Preparar dados brutos
-    dados = {
-        "RevolvingUtilizationOfUnsecuredLines": revolving,
-        "age": age,
-        "NumberOfTime30-59DaysPastDueNotWorse": atraso_30,
-        "DebtRatio": debt_ratio,
-        "MonthlyIncome": None if monthly_income == 0 else float(monthly_income),
-        "NumberOfOpenCreditLinesAndLoans": open_credit,
-        "NumberOfTimes90DaysLate": atraso_90,
-        "NumberRealEstateLoansOrLines": real_estate,
-        "NumberOfTime60-89DaysPastDueNotWorse": atraso_60,
-        "NumberOfDependents": None if dependents == -1 else float(dependents),
+def montar(s):
+    return {
+        "RevolvingUtilizationOfUnsecuredLines": s["rev"],
+        "age": s["age"],
+        "NumberOfTime30-59DaysPastDueNotWorse": s["a30"],
+        "DebtRatio": s["debt"],
+        "MonthlyIncome": None if s["renda_ni"] else float(s["renda"]),
+        "NumberOfOpenCreditLinesAndLoans": s["linhas"],
+        "NumberOfTimes90DaysLate": s["a90"],
+        "NumberRealEstateLoansOrLines": s["imob"],
+        "NumberOfTime60-89DaysPastDueNotWorse": s["a60"],
+        "NumberOfDependents": None if s["dep_ni"] else float(s["dep"]),
     }
 
-    with st.spinner("Analisando perfil do cliente..."):
-        resultado = predizer(dados)
 
-    proba = resultado["probabilidade"]
-    decisao = resultado["decisao"]
+estado = {k: S[k] for k in PADRAO}
+dados = montar(estado)
+resultado = predizer(dados)
+p = resultado["probabilidade"]
+threshold = resultado["threshold"]
+aprovado = resultado["decisao"] == "APROVAR"
+features = resultado["features_processadas"]
 
-    # ── Resultado principal ────────────────────────────────
-    col1, col2, col3 = st.columns(3)
+# ── Cabeçalho ──────────────────────────────────────────────
+html(f"""
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid #e3e1db">
+  <div style="display:flex;gap:12px;align-items:center">
+    <div style="width:28px;height:28px;border-radius:6px;background:#1d2129;color:#fbfaf8;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600">CS</div>
+    <div><div style="font-size:15px;font-weight:600">Análise de Crédito</div>
+    <div style="font-size:12px;color:#6b6f78">Avaliação de risco de inadimplência em 2 anos</div></div>
+  </div>
+  <div class="mono" style="display:flex;gap:18px;font-size:12px;color:#6b6f78">
+    <span>XGBoost</span><span>AUC {num(AUC, 3)}</span><span>KS {num(KS, 3)}</span><span>Corte {pct(threshold, 0)}</span>
+  </div>
+</div>
+""")
 
-    with col1:
-        st.metric(
-            label="Probabilidade de Inadimplência",
-            value=f"{proba:.1%}"
+# ── Nível de risco ─────────────────────────────────────────
+if p < threshold * 0.4:
+    nivel, cor_nivel = "Risco baixo", "#8fd1a9"
+elif p < threshold * 0.7:
+    nivel, cor_nivel = "Risco moderado", "#e3c86a"
+elif p < threshold:
+    nivel, cor_nivel = "Risco alto", "#e9a26e"
+else:
+    nivel, cor_nivel = "Risco crítico", "#ec8c80"
+
+# ── Contribuições (variável trocada pelo valor de referência) ──
+contribs = []
+for chave, ref in REF.items():
+    if dados[chave] == ref:
+        continue
+    d = p - prob({**dados, chave: ref})
+    if abs(d) >= 0.001:
+        contribs.append((chave, d))
+contribs.sort(key=lambda x: -abs(x[1]))
+contribs = contribs[:7]
+maior_alta = next((LABELS[k] for k, d in contribs if d > 0), "Nenhum acima da referência")
+
+
+def valor_legivel(chave):
+    v = dados[chave]
+    if v is None:
+        return "não informado"
+    if chave in ("RevolvingUtilizationOfUnsecuredLines", "DebtRatio"):
+        return pct(v, 0)
+    if chave == "MonthlyIncome":
+        return brl(v)
+    if chave == "age":
+        return f"{int(v)} anos"
+    return str(int(v))
+
+
+# ── Carteira ───────────────────────────────────────────────
+carteira = carregar_carteira()
+percentil = int(round(np.searchsorted(carteira, p) / len(carteira) * 100)) if carteira is not None else None
+
+# ── Card principal ─────────────────────────────────────────
+escala = max(threshold * 2, 0.6)
+pos = lambda v: min(v, escala) / escala * 100
+faixa = threshold * 0.3 / escala * 100
+badge_bg = "#2f7a52" if aprovado else "#b23a31"
+
+html(f"""
+<div class="hero">
+  <div class="hero-top">
+    <div class="hero-row">
+      <div><div class="hero-lbl">Probabilidade de inadimplência</div><div class="hero-num">{pct(p)}</div></div>
+      <div style="text-align:right">
+        <span class="badge" style="background:{badge_bg}">{"Aprovar" if aprovado else "Reprovar"}</span>
+        <div style="font-size:13px;font-weight:500;color:{cor_nivel};margin-top:10px">{nivel}</div>
+      </div>
+    </div>
+    <div class="bar">
+      <div style="width:{pos(threshold * 0.4)}%;background:#4d9a6c"></div>
+      <div style="width:{faixa}%;background:#c9a640"></div>
+      <div style="width:{faixa}%;background:#c97a45"></div>
+      <div style="flex:1;background:#b84b40"></div>
+    </div>
+    <div style="position:relative"><div class="marker" style="left:{pos(p)}%"></div></div>
+    <div class="scale mono">
+      <span style="position:absolute;left:0">0%</span>
+      <span style="position:absolute;left:{pos(threshold)}%;transform:translateX(-50%);color:#f3f2ee">corte {pct(threshold, 0)}</span>
+      <span style="position:absolute;right:0">{pct(escala, 0)}+</span>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><span>Posição na carteira</span><b>{f"{percentil}º percentil" if percentil is not None else "—"}</b></div>
+    <div class="stat"><span>Distância do corte</span><b class="mono">{pp(p - threshold)}</b></div>
+    <div class="stat"><span>Maior peso no risco</span><b>{maior_alta}</b></div>
+  </div>
+</div>
+""")
+
+if aprovado and p > threshold * 0.7:
+    html(f'<div class="note"><b>Recomendada revisão manual.</b> Cliente aprovado a {num((threshold - p) * 100)} pontos do corte de reprovação.</div>')
+
+# ── Explicação + carteira ──────────────────────────────────
+col_a, col_b = st.columns(2, gap="medium")
+
+with col_a:
+    with st.container(border=True):
+        linhas = ""
+        mx = max([abs(d) for _, d in contribs] + [0.01])
+        for chave, d in contribs:
+            cor = "#a8322b" if d > 0 else "#2f7a52"
+            w = abs(d) / mx * 100
+            linhas += f"""
+            <div class="crow">
+              <div class="t"><span><b style="font-weight:500">{LABELS[chave]}</b> <span style="color:#8a8d94">{valor_legivel(chave)}</span></span>
+              <span class="mono" style="color:{cor}">{pp(d)}</span></div>
+              <div class="neg"><div style="width:{w if d < 0 else 0}%;background:#5fa57c;border-radius:3px 0 0 3px"></div></div>
+              <div style="display:flex;height:8px"><div style="width:{w if d > 0 else 0}%;background:#c95a4f;border-radius:0 3px 3px 0"></div></div>
+            </div>"""
+        if not contribs:
+            linhas = '<div class="sub" style="padding:12px 0">Perfil igual ao de referência.</div>'
+        html(f"""
+        <p class="h3">O que explica o resultado</p>
+        <div class="sub">Variação em pontos percentuais em relação ao perfil de referência da carteira</div>
+        <div class="axis mono"><span>reduz o risco</span><span>aumenta o risco</span></div>
+        {linhas}
+        """)
+
+with col_b:
+    with st.container(border=True):
+        if carteira is None:
+            html("""<p class="h3">Posição na carteira</p>
+            <div class="sub">Adicione data/scores_carteira.npy ou data/cs-training.csv para exibir a distribuição.</div>""")
+        else:
+            lim, nb = 0.6, 30
+            cont, _ = np.histogram(np.clip(carteira, 0, lim - 1e-9), bins=nb, range=(0, lim))
+            mxc = cont.max()
+            bin_cli = min(nb - 1, int(p / lim * nb))
+            barras = ""
+            for i, c in enumerate(cont):
+                meio = (i + 0.5) / nb * lim
+                cor = ("#a9d4b8" if meio < threshold * 0.4 else "#e6d48f" if meio < threshold * 0.7
+                       else "#e8b48c" if meio < threshold else "#e09d93")
+                barras += f'<div class="b" style="height:{max(1, c / mxc * 100)}%;background:{cor};opacity:{1 if i == bin_cli else .7}"></div>'
+            acima = (carteira >= threshold).mean()
+            html(f"""
+            <p class="h3">Posição na carteira</p>
+            <div class="sub">Distribuição da probabilidade estimada em {num(len(carteira), 0)} clientes</div>
+            <div class="hist">{barras}
+              <div style="position:absolute;left:{min(threshold, lim) / lim * 100}%;top:0;bottom:0;border-left:1px dashed #6b6f78"></div>
+              <div style="position:absolute;left:{min(p, lim) / lim * 100}%;top:-6px;bottom:0;width:2px;margin-left:-1px;background:#15181e">
+                <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:10px;height:10px;border-radius:50%;background:#15181e;box-shadow:0 0 0 3px #fff"></div>
+              </div>
+            </div>
+            <div class="mono" style="display:flex;justify-content:space-between;font-size:11px;color:#8a8d94;padding-top:6px">
+              <span>0%</span><span>{pct(lim / 2, 0)}</span><span>{pct(lim, 0)}+</span></div>
+            <div style="font-size:13px;line-height:1.5;margin-top:14px">
+              <b style="font-weight:600">Risco maior que o de {percentil}% da carteira.</b><br>
+              <span style="color:#6b6f78">{pct(acima)} da carteira está acima do corte de {pct(threshold, 0)}.</span>
+            </div>""")
+
+# ── Simulação ──────────────────────────────────────────────
+cenarios = []
+if estado["rev"] > 0.3:
+    cenarios.append(("Reduzir uso do rotativo para 30%", {"rev": 0.30}))
+if estado["debt"] > 0.35:
+    cenarios.append(("Reduzir comprometimento da renda para 35%", {"debt": 0.35}))
+if estado["renda_ni"]:
+    cenarios.append((f"Informar renda de {brl(6700)}", {"renda_ni": False, "renda": 6700}))
+if estado["dep_ni"]:
+    cenarios.append(("Informar número de dependentes", {"dep_ni": False}))
+if len(cenarios) < 3 and estado["rev"] <= 0.8:
+    novo = round(min(1.1, estado["rev"] + 0.4), 2)
+    cenarios.append((f"Rotativo subir para {pct(novo, 0)}", {"rev": novo}))
+
+
+def p_com_rotativo(r):
+    return prob({**dados, "RevolvingUtilizationOfUnsecuredLines": r})
+
+
+if aprovado:
+    grade = np.arange(estado["rev"], 1.1001, 0.02)
+    r = next((x for x in grade if p_com_rotativo(x) >= threshold), None)
+    virada = "Segue aprovado mesmo com 110% de rotativo" if r is None else f"Reprovaria com rotativo a partir de {pct(r, 0)}"
+else:
+    grade = np.arange(estado["rev"], -0.0001, -0.02)
+    r = next((x for x in grade if p_com_rotativo(x) < threshold), None)
+    virada = "Nenhum nível de rotativo aprova este perfil" if r is None else f"Aprovaria com rotativo até {pct(max(0, r), 0)}"
+
+with st.container(border=True):
+    c1, c2 = st.columns([3, 2])
+    with c1:
+        html('<p class="h3">Simulação</p><div class="sub">O que mudaria a análise mantendo o restante do perfil</div>')
+    with c2:
+        html(f'<div style="font-size:13px;background:#f4f2ee;border-radius:6px;padding:6px 10px;text-align:center">{virada}</div>')
+
+    if cenarios:
+        cols = st.columns(len(cenarios), gap="medium")
+        for col, (titulo, mud) in zip(cols, cenarios):
+            p2 = prob(montar({**estado, **mud}))
+            vira = (p2 < threshold) != aprovado
+            flip = ""
+            if vira:
+                bg, fg, txt = (("#f8e7e4", "#8f2f27", "Passa a reprovar") if aprovado
+                               else ("#e6f3ea", "#2a5e40", "Passa a aprovar"))
+                flip = f'<span class="flip" style="background:{bg};color:{fg}">{txt}</span>'
+            cor = "#a8322b" if p2 > p else "#2f7a52"
+            with col:
+                html(f"""
+                <div style="border-top:1px solid #eeece7;padding-top:14px;margin-top:8px">
+                  <span class="scen-t">{titulo}</span>{flip}
+                  <div class="scen-n mono">
+                    <span style="font-size:13px;color:#8a8d94;text-decoration:line-through">{pct(p)}</span>
+                    <span style="font-size:22px;font-weight:500">{pct(p2)}</span>
+                    <span style="font-size:13px;color:{cor}">{pp(p2 - p)}</span>
+                  </div>
+                </div>""")
+                st.button("Aplicar ao perfil", key=f"apl_{titulo}", on_click=aplicar, args=(mud,))
+    else:
+        html('<div class="sub" style="padding-top:10px">Rotativo e comprometimento da renda já estão nos níveis de referência.</div>')
+
+# ── Variáveis técnicas ─────────────────────────────────────
+with st.expander("Variáveis enviadas ao modelo"):
+    cols = st.columns(3, gap="large")
+    for i, (k, v) in enumerate(features.items()):
+        cols[i % 3].markdown(
+            f'<div class="frow" title="{k}"><span style="color:#6b6f78">{LABELS.get(k, k)}</span>'
+            f'<span class="mono">{fmt(v)}</span></div>',
+            unsafe_allow_html=True,
         )
 
-    with col2:
-        if decisao == "APROVAR":
-            st.success(f"✅ DECISÃO: {decisao}")
-        else:
-            st.error(f"❌ DECISÃO: {decisao}")
-
-    with col3:
-        threshold = resultado["threshold"]
-        if proba < threshold * 0.4:
-            nivel = "🟢 Baixo Risco"
-        elif proba < threshold * 0.7:
-            nivel = "🟡 Médio Risco"
-        elif proba < threshold:
-            nivel = "🟠 Alto Risco — Aprovado com Cautela"
-        else:
-            nivel = "🔴 Risco Crítico — Reprovado"
-        st.metric(label="Nível de Risco", value=nivel)
-        
-    if decisao == "APROVAR" and proba > threshold * 0.7:
-        st.warning(
-            f"⚠️ **Atenção:** Cliente aprovado mas com probabilidade de "
-            f"inadimplência de {proba:.1%} — próximo ao threshold de reprovação "
-            f"({threshold:.0%}). Recomenda-se análise manual adicional."
-    )
-
-    st.divider()
-
-    # ── Features processadas ───────────────────────────────
-    with st.expander("🔎 Ver features processadas pelo modelo"):
-        features = resultado["features_processadas"]
-        df_features = json.dumps(features, indent=2, ensure_ascii=False)
-        st.json(df_features)
-
-    # ── Fatores de risco identificados ────────────────────
-    st.subheader("⚠️ Fatores de Risco Identificados")
-
-    fatores = []
-    f = resultado["features_processadas"]
-
-    if f.get("teve_qualquer_atraso", 0) == 1:
-        fatores.append("📛 Cliente possui histórico de atrasos")
-    if f.get("NumberOfTimes90DaysLate", 0) > 0:
-        fatores.append(f"🚨 {int(f['NumberOfTimes90DaysLate'])} atraso(s) grave(s) acima de 90 dias")
-    if f.get("RevolvingUtilizationOfUnsecuredLines", 0) > 0.7:
-        fatores.append(f"💳 Utilização de crédito rotativo alta: {f['RevolvingUtilizationOfUnsecuredLines']:.0%}")
-    if f.get("DebtRatio", 0) > 0.5:
-        fatores.append(f"📊 Debt ratio elevado: {f['DebtRatio']:.2f}")
-    if f.get("flag_missing_income", 0) == 1:
-        fatores.append("❓ Renda não informada — perfil de maior incerteza")
-
-    if fatores:
-        for fator in fatores:
-            st.warning(fator)
-    else:
-        st.success("✅ Nenhum fator de risco crítico identificado")
-
-    st.divider()
-    st.caption(f"Modelo: XGBoost | Threshold: {resultado['threshold']} | AUC: 0.8697 | KS: 0.5800")
-
-else:
-    st.info("👈 Preencha os dados do cliente na barra lateral e clique em **Analisar Cliente**.")
+# ── Rodapé ─────────────────────────────────────────────────
+links_html = "".join(
+    f'<a href="{url}" target="_blank"><img src="https://unpkg.com/lucide-static@0.400.0/icons/{icone}.svg" alt="">{nome}</a>'
+    for nome, url, icone in LINKS
+)
+html(f'<div class="rodape"><span>Desenvolvido por {AUTOR} · Modelo treinado na base Give Me Some Credit</span><nav>{links_html}</nav></div>')
