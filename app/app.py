@@ -43,6 +43,7 @@ LABELS = {
     "NumberOfTimes90DaysLate": "Atrasos 90+ dias", "NumberRealEstateLoansOrLines": "Financiamentos imobiliários",
     "NumberOfTime60-89DaysPastDueNotWorse": "Atrasos 60–89 dias", "NumberOfDependents": "Dependentes",
     "teve_qualquer_atraso": "Teve algum atraso", "flag_missing_income": "Renda ausente",
+    "renda_per_capita": "Renda per capita", "teve_atraso_90dias": "Teve atraso 90+ dias",
 }
 
 VERDE, AMARELO, LARANJA, VERMELHO = "#3f8f62", "#c9a227", "#d07a3a", "#c2453d"
@@ -123,33 +124,44 @@ section[data-testid="stSidebar"] hr { margin: 12px 0; border-color: #eeece7; }
 .stButton button { border-radius: 6px; border: 1px solid #d9d6cf; background: #fff; color: #1d2129; font-size: 13px; }
 .stButton button:hover { background: #f4f2ee; border-color: #c9c6bf; color: #1d2129; }
 [data-testid="stExpander"] { background: #fff; border: 1px solid #e3e1db; border-radius: 10px; }
+/* compacto */
+.block-container { padding-top: .8rem !important; }
+[data-testid="stVerticalBlock"] { gap: .55rem; }
+[data-testid="stSlider"] { padding-bottom: 0; }
+[data-testid="stSlider"] > div:last-child { margin-top: -6px; }
+[data-testid="stNumberInput"] input { height: 34px; padding: 0 8px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+[data-testid="stNumberInput"] button { width: 26px; }
+[data-testid="stWidgetLabel"] p { font-size: 13px !important; }
+[data-testid="stCheckbox"] label p { font-size: 12px !important; color: #6b6f78 !important; }
+[data-testid="stCheckbox"] { margin-top: -6px; }
+hr.sep { border: none; border-top: 1px solid #eeece7; margin: 6px 0 4px; }
 .mono { font-family: 'IBM Plex Mono', monospace; }
-.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #8a8d94; margin: 4px 0 8px; }
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #8a8d94; margin: 2px 0 0; }
 .hint { font-size: 12px; color: #8a8d94; margin: -12px 0 10px; }
 .h3 { font-size: 15px; font-weight: 600; margin: 0; }
 .sub { font-size: 13px; color: #6b6f78; margin-top: 2px; }
-.hero { background: #15181e; color: #f3f2ee; border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
-.hero-top { padding: 30px 32px 24px; }
+.hero { background: #15181e; color: #f3f2ee; border-radius: 12px; overflow: hidden; margin-bottom: 4px; }
+.hero-top { padding: 22px 28px 18px; }
 .hero-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
 .hero-lbl { font-size: 13px; color: #a2a6ae; }
-.hero-num { font-size: 68px; font-weight: 500; letter-spacing: -.04em; line-height: 1; margin-top: 8px; }
+.hero-num { font-size: 56px; font-weight: 500; letter-spacing: -.04em; line-height: 1; margin-top: 8px; }
 .badge { display: inline-block; padding: 9px 16px; border-radius: 6px; font-size: 16px; font-weight: 600; color: #fbfaf8; }
-.bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 28px; }
+.bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 20px; }
 .marker { position: absolute; top: -16px; width: 4px; height: 22px; margin-left: -2px; background: #fff; border-radius: 2px; box-shadow: 0 0 0 3px #15181e; }
 .scale { position: relative; height: 16px; font-size: 11px; color: #8a8e97; margin-top: 8px; }
 .stats { display: flex; flex-wrap: wrap; gap: 1px; background: #2a2e36; border-top: 1px solid #2a2e36; }
-.stat { flex: 1 1 170px; background: #15181e; padding: 16px 32px; }
+.stat { flex: 1 1 170px; background: #15181e; padding: 12px 28px; }
 .stat span { display: block; font-size: 12px; color: #8a8e97; margin-bottom: 4px; }
 .stat b { font-size: 15px; font-weight: 500; }
-.note { background: #fbf5e6; border: 1px solid #ecdcae; border-radius: 8px; padding: 14px 16px; font-size: 14px; color: #4a3b12; margin-bottom: 16px; }
-.axis { display: flex; justify-content: space-between; font-size: 11px; color: #8a8d94; margin: 14px 0 4px; }
-.crow { display: grid; grid-template-columns: 1fr 1fr; row-gap: 6px; padding: 9px 0; border-bottom: 1px solid #f1efea; }
+.note { background: #fbf5e6; border: 1px solid #ecdcae; border-radius: 8px; padding: 10px 14px; font-size: 14px; color: #4a3b12; margin-bottom: 4px; }
+.axis { display: flex; justify-content: space-between; font-size: 11px; color: #8a8d94; margin: 8px 0 2px; }
+.crow { display: grid; grid-template-columns: 1fr 1fr; row-gap: 4px; padding: 6px 0; border-bottom: 1px solid #f1efea; }
 .crow .t { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
 .neg { display: flex; justify-content: flex-end; height: 8px; border-right: 1px solid #c9c6bf; }
 .scen-t { font-size: 14px; font-weight: 500; }
 .flip { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 7px; border-radius: 4px; margin-left: 6px; }
-.scen-n { display: flex; align-items: baseline; gap: 10px; margin: 10px 0 6px; }
-.rodape { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; border-top: 1px solid #e3e1db; margin-top: 32px; padding-top: 18px; font-size: 13px; color: #6b6f78; }
+.scen-n { display: flex; align-items: baseline; gap: 10px; margin: 6px 0 2px; }
+.rodape { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; border-top: 1px solid #e3e1db; margin-top: 20px; padding-top: 14px; font-size: 13px; color: #6b6f78; }
 .rodape nav { display: flex; gap: 6px; flex-wrap: wrap; }
 .rodape a { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid #e3e1db; border-radius: 6px; background: #fff; color: #1d2129 !important; text-decoration: none; }
 .rodape a:hover { background: #f4f2ee; }
@@ -164,34 +176,36 @@ col_form, col_main = st.columns([1, 2.4], gap="large")
 
 with col_form, st.container(border=True):
     html('<span class="card-marker"></span>')
-    c_t, c_b = st.columns([3, 2])
-    c_t.markdown('<p class="h3" style="padding-top:6px">Dados do cliente</p>', unsafe_allow_html=True)
-    c_b.button("Restaurar padrão", on_click=restaurar, use_container_width=True)
+    c_t, c_b = st.columns([3, 2], vertical_alignment="center")
+    c_t.markdown('<p class="h3">Dados do cliente</p>', unsafe_allow_html=True)
+    c_b.button("Restaurar", on_click=restaurar, use_container_width=True)
 
     html('<div class="eyebrow">Perfil</div>')
     st.slider("Idade", 18, 100, key="age", format="%d anos")
-    st.checkbox("Renda não informada", key="renda_ni")
-    st.number_input("Renda mensal (R$)", 0, 100000, step=100, key="renda", disabled=st.session_state.renda_ni)
-    st.checkbox("Dependentes não informado", key="dep_ni")
-    st.number_input("Dependentes", 0, 20, key="dep", disabled=st.session_state.dep_ni)
+    r1, r2 = st.columns([3, 2])
+    with r1:
+        st.number_input("Renda mensal (R$)", 0, 100000, step=100, key="renda", disabled=st.session_state.renda_ni)
+        st.checkbox("Não informada", key="renda_ni")
+    with r2:
+        st.number_input("Dependentes", 0, 20, key="dep", disabled=st.session_state.dep_ni)
+        st.checkbox("Não informado", key="dep_ni")
 
-    st.divider()
-    html('<div class="eyebrow">Endividamento</div>')
-    st.slider("Uso do crédito rotativo", 0, 110, step=1, key="rev", format="%d%%")
-    html('<div class="hint">Saldo usado em cartões e linhas sem garantia sobre o limite total</div>')
-    st.slider("Comprometimento da renda", 0, 140, step=1, key="debt", format="%d%%")
-    html('<div class="hint">Pagamentos mensais de dívidas sobre a renda bruta</div>')
+    html('<hr class="sep"><div class="eyebrow">Endividamento</div>')
+    st.slider("Uso do crédito rotativo", 0, 110, step=1, key="rev", format="%d%%",
+              help="Saldo usado em cartões e linhas sem garantia sobre o limite total")
+    st.slider("Comprometimento da renda", 0, 140, step=1, key="debt", format="%d%%",
+              help="Pagamentos mensais de dívidas sobre a renda bruta")
 
-    st.divider()
-    html('<div class="eyebrow">Atrasos nos últimos 2 anos</div>')
-    st.number_input("30 a 59 dias", 0, 20, key="a30")
-    st.number_input("60 a 89 dias", 0, 20, key="a60")
-    st.number_input("90 dias ou mais", 0, 20, key="a90")
+    html('<hr class="sep"><div class="eyebrow">Atrasos nos últimos 2 anos</div>')
+    d1, d2, d3 = st.columns(3)
+    d1.number_input("30–59 dias", 0, 20, key="a30")
+    d2.number_input("60–89 dias", 0, 20, key="a60")
+    d3.number_input("90+ dias", 0, 20, key="a90")
 
-    st.divider()
-    html('<div class="eyebrow">Linhas de crédito</div>')
-    st.number_input("Linhas e empréstimos abertos", 0, 50, key="linhas")
-    st.number_input("Financiamentos imobiliários", 0, 20, key="imob")
+    html('<hr class="sep"><div class="eyebrow">Linhas de crédito</div>')
+    l1, l2 = st.columns(2)
+    l1.number_input("Linhas abertas", 0, 50, key="linhas")
+    l2.number_input("Imobiliários", 0, 20, key="imob")
 
 S = st.session_state
 
@@ -222,7 +236,7 @@ features = resultado["features_processadas"]
 # ── Cabeçalho ──────────────────────────────────────────────
 with cabecalho:
   html(f"""
-<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid #e3e1db">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding-bottom:10px;margin-bottom:4px;border-bottom:1px solid #e3e1db">
   <div style="display:flex;gap:12px;align-items:center">
     <div style="width:28px;height:28px;border-radius:6px;background:#1d2129;color:#fbfaf8;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600">CS</div>
     <div><div style="font-size:15px;font-weight:600">Análise de Crédito</div>
@@ -388,7 +402,7 @@ with col_main:
                     cor = "#a8322b" if p2 > p else "#2f7a52"
                     with col:
                         html(f"""
-                        <div style="border-top:1px solid #eeece7;padding-top:14px;margin-top:4px">
+                        <div style="border-top:1px solid #eeece7;padding-top:10px">
                           <span class="scen-t">{titulo}</span>{flip}
                           <div class="scen-n mono">
                             <span style="font-size:13px;color:#8a8d94;text-decoration:line-through">{pct(p)}</span>
