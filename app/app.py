@@ -109,7 +109,6 @@ header[data-testid="stHeader"] { background: transparent; }
 [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] { display: none; }
 section[data-testid="stSidebar"] { background: #fff; border-right: 1px solid #e3e1db; }
 section[data-testid="stSidebar"] hr { margin: 12px 0; border-color: #eeece7; }
-[data-testid="stVerticalBlockBorderWrapper"]:has(.card-marker):not(:has([data-testid="stVerticalBlockBorderWrapper"] .card-marker)) { background: #fff; border-color: #e3e1db !important; border-radius: 10px; }
 [data-baseweb="input"], [data-baseweb="input"] > div, [data-testid="stNumberInput"] input { background: #fff !important; color: #1d2129 !important; }
 [data-testid="stNumberInput"] button { background: #fff !important; color: #4a4e57 !important; }
 [data-testid="stNumberInputContainer"] { border: 1px solid #d9d6cf; border-radius: 6px; }
@@ -123,21 +122,15 @@ section[data-testid="stSidebar"] hr { margin: 12px 0; border-color: #eeece7; }
 .stButton button { border-radius: 6px; border: 1px solid #d9d6cf; background: #fff; color: #1d2129; font-size: 13px; }
 .stButton button:hover { background: #f4f2ee; border-color: #c9c6bf; color: #1d2129; }
 [data-testid="stExpander"] { background: #fff; border: 1px solid #e3e1db; border-radius: 10px; }
-/* formulário compacto (somente o card da esquerda; funciona em versões antigas e novas do Streamlit) */
-[data-testid="stVerticalBlock"]:has(.form-marker):not(:has([data-testid="stVerticalBlock"] .form-marker)) { gap: .2rem !important; }
-[data-testid="stVerticalBlock"]:has(.form-marker):not(:has([data-testid="stVerticalBlock"] .form-marker)) .eyebrow { margin: 2px 0 0; }
-[data-testid="stVerticalBlock"]:has(.form-marker):not(:has([data-testid="stVerticalBlock"] .form-marker)) .hint { margin: -14px 0 0; }
-[data-testid="stVerticalBlock"]:has(.form-marker):not(:has([data-testid="stVerticalBlock"] .form-marker)) [data-testid="stSlider"] { margin-bottom: -14px; }
-[data-testid="stVerticalBlock"]:has(.form-marker):not(:has([data-testid="stVerticalBlock"] .form-marker)) [data-testid="stSlider"] [data-baseweb="slider"] { padding-top: 4px; }
-[data-testid="stVerticalBlock"]:has(.form-marker):not(:has([data-testid="stVerticalBlock"] .form-marker)) [data-testid="stTickBar"] { display: none; }
-[data-testid="stVerticalBlock"]:has(.form-marker):not(:has([data-testid="stVerticalBlock"] .form-marker)) [data-testid="stCheckbox"] { margin: 0 0 -6px; }
-[data-testid="stVerticalBlock"]:has(.form-marker):not(:has([data-testid="stVerticalBlock"] .form-marker)) [data-testid="stNumberInput"] input { height: 34px; }
-[data-testid="stVerticalBlock"]:has(.form-marker):not(:has([data-testid="stVerticalBlock"] .form-marker)) [data-testid="stNumberInputContainer"] { height: 36px; }
-[data-testid="stVerticalBlock"]:has(.form-marker):not(:has([data-testid="stVerticalBlock"] .form-marker)) [data-testid="stWidgetLabel"] { margin-bottom: 0; min-height: 1.2rem; }
-[data-testid="stVerticalBlock"]:has(.form-marker):not(:has([data-testid="stVerticalBlock"] .form-marker)) [data-testid="stWidgetLabel"] p { font-size: 13px !important; }
-[data-testid="stVerticalBlock"]:has(.form-marker):not(:has([data-testid="stVerticalBlock"] .form-marker)) .stElementContainer:has(.card-marker), [data-testid="stVerticalBlock"]:has(.form-marker):not(:has([data-testid="stVerticalBlock"] .form-marker)) .stElementContainer:has(.form-marker),
-[data-testid="stVerticalBlock"]:has(.form-marker):not(:has([data-testid="stVerticalBlock"] .form-marker)) [data-testid="stElementContainer"]:has(.card-marker), [data-testid="stVerticalBlock"]:has(.form-marker):not(:has([data-testid="stVerticalBlock"] .form-marker)) [data-testid="stElementContainer"]:has(.form-marker) { display: none; }
-hr.sep { border: none; border-top: 1px solid #eeece7; margin: 8px 0 2px; }
+/* cards brancos: containers com key="card_..." recebem a classe st-key-card_... */
+[class*="st-key-card_"] { background: #fff; border: 1px solid #e3e1db; border-radius: 10px; padding: 20px 22px; }
+/* formulário: espaçamento um pouco menor que o padrão, sem sobreposição */
+.st-key-card_form { gap: .65rem !important; padding: 18px 20px; }
+.st-key-card_form [data-testid="stWidgetLabel"] p { font-size: 13px; }
+.st-key-card_form [data-testid="stTickBar"] { display: none; }
+.st-key-card_form .eyebrow { margin: 0; }
+.st-key-card_form .hint { margin: -6px 0 0; line-height: 1.35; }
+hr.sep { border: none; border-top: 1px solid #eeece7; margin: 4px 0 10px; }
 .mono { font-family: 'IBM Plex Mono', monospace; }
 .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #8a8d94; margin: 4px 0 8px; }
 .hint { font-size: 12px; color: #8a8d94; margin: -12px 0 10px; }
@@ -177,12 +170,10 @@ hr.sep { border: none; border-top: 1px solid #eeece7; margin: 8px 0 2px; }
 cabecalho = st.container()
 col_form, col_main = st.columns([1, 2.4], gap="large")
 
-with col_form, st.container(border=True):
-    html('<span class="card-marker"></span>')
-    html('<span class="form-marker"></span>')
+with col_form, st.container(key="card_form"):
     c_t, c_b = st.columns([3, 2], vertical_alignment="center")
     c_t.markdown('<p class="h3">Dados do cliente</p>', unsafe_allow_html=True)
-    c_b.button("Restaurar padrão", on_click=restaurar, use_container_width=True)
+    c_b.button("Restaurar", on_click=restaurar, use_container_width=True, help="Restaurar valores padrão")
 
     html('<div class="eyebrow">Perfil</div>')
     st.slider("Idade", 18, 100, key="age", format="%d anos")
@@ -357,8 +348,7 @@ with col_main:
     col_sim = st.container()
 
     with col_exp:
-        with st.container(border=True):
-            html('<span class="card-marker"></span>')
+        with st.container(key="card_explica"):
             linhas = ""
             mx = max([abs(d) for _, d in contribs] + [0.01])
             for chave, d in contribs:
@@ -381,8 +371,7 @@ with col_main:
             """)
 
     with col_sim:
-        with st.container(border=True):
-            html('<span class="card-marker"></span>')
+        with st.container(key="card_simulacao"):
             h1, h2 = st.columns([3, 2])
             with h1:
                 html('<p class="h3">Simulação</p><div class="sub">O que mudaria a análise mantendo o restante do perfil</div>')
